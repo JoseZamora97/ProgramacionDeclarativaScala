@@ -45,7 +45,7 @@ object Problem2_3 extends App{
 object Problem2_4 extends App{
 
     def concatenateEither(list: List[Either[String, Int]]): String =
-        list.foldRight("")((head: Either[String, Int], acc:String) => head.left.getOrElse("") + acc)
+        list.foldRight("")((head, acc) => head.left.getOrElse("") + acc)
 
     println(
         concatenateEither(List()) + "\n" +
@@ -62,7 +62,7 @@ object Problem2_4 extends App{
 object Problem2_5 extends App{
 
     def greatest(list: List[Int]): Option[Int] =
-        list.foldLeft(None: Option[Int])((m: Option[Int], a: Int) => Some(max(a, m.getOrElse(0))))
+        list.foldLeft(None: Option[Int])((m, a) => Some(max(a, m.getOrElse(0))))
 
     println(
         greatest(List()) + "\n" +
@@ -107,11 +107,14 @@ object Problem2_8 extends App{
     val f: (Int, String) => Boolean =
         (i: Int, s: String) => (i + s.length) > 0
 
-    val sum: (Int, Int) => Int =
-        (x: Int, y: Int) => x + y
+    def sum(list1: List[Int], list2: List[Int]): List[Int] =
+        zipWith(list1, list2)(_+_)
 
     def zipWith[A, B, C](list1: List[A], list2: List[B])(f: (A, B) => C): List[C] =
-        ???
+        (list1, list2) match {
+            case (h1::t1, h2::t2) => f(h1, h2)::zipWith(t1, t2)(f)
+            case _ => Nil
+        }
 
     println(
         zipWith(List(), List())(f) +" shouldBe List()\n" +
@@ -128,7 +131,7 @@ object Problem2_9 extends App{
 
     /* Part B */
     def occurrencesOf[A](list: List[A], a: A): Int =
-        occurrences(list)(_.equals(a))
+        occurrences(list)(_ == a)
 
     println(
         occurrencesOf(List("1","1","1"), "1") +" shouldBe 3\n" +
@@ -145,7 +148,10 @@ object Problem2_10 extends App{
 
     /* Part A */
     def takeWhile[A](list: List[A])(pred: A => Boolean): List[A] =
-        list.flatMap {x => if (pred(x)) x::Nil else None}
+        list match {
+            case head :: tail if pred(head) => head :: takeWhile(tail)(pred)
+            case _ => List()
+        }
 
     println(
         takeWhile(List())(isEvenLength) + " shouldBe List()\n" +
@@ -153,7 +159,6 @@ object Problem2_10 extends App{
         takeWhile(List("", "ab", "abcd", "a", "aa"))(isEvenLength)
             + " shouldBe List(\"\", \"ab\",\"abcd\")"
     )
-
 }
 
 object Problem2_11 extends App{
@@ -162,11 +167,8 @@ object Problem2_11 extends App{
 
     /* Part A */
     def partition[A](list: List[A])(predicate: A => Boolean): (List[A], List[A]) =
-        list.foldRight(List.empty[A], List.empty[A]) {
-            case (value, (acc1, acc2)) => value match {
-                case x: A if predicate(x) => (x::acc1, acc2)
-                case x: A => (acc1, x::acc2)
-            }
+        list.foldRight((List[A](), List[A]())) {
+            case (e, (acc1, acc2)) => if (predicate(e)) (e::acc1, acc2) else (acc1, e::acc2)
         }
 
     println(
@@ -205,8 +207,7 @@ object Problem2_12 extends App{
     def forall[A](list: List[A])(pred: A => Boolean): Boolean =
         list match {
             case Nil => true
-            case head::_ if !pred(head) => false
-            case _::tail => forall(tail)(pred)
+            case head::tail => pred(head) && forall(tail)(pred)
         }
 
     println(
@@ -220,8 +221,7 @@ object Problem2_12 extends App{
     def exists[A](list: List[A])(pred: A => Boolean): Boolean =
         list match {
             case Nil => false
-            case head::_ if pred(head) => true
-            case _::tail => exists(tail)(pred)
+            case head::tail => pred(head) || exists(tail)(pred)
         }
 
     println(
@@ -294,7 +294,16 @@ object Problem2_14 extends App{
 object Problem2_15 extends App{
 
     def isDegenerate[A](tree: Tree[A]): Boolean =
-        Utils2.foldTree(tree)(true)((l,_,r) => false)
+        Utils2.foldTree(tree)((true, true)){
+            case ((true, _), _, (true, _)) =>
+                (false, true)
+            case ((false, _), _, (false, _)) =>
+                (false, false)
+            case ((true, _), _, (false, isR)) =>
+                (false, isR)
+            case ((false, isL), _, (true, _)) =>
+                (false, isL)
+        }._2
 
     println(
         isDegenerate(void) + "\n" +
@@ -312,7 +321,10 @@ object Problem2_15 extends App{
 object Problem2_16 extends App{
 
     def leaves[A](tree: Tree[A]): List[A] =
-        Utils2.foldTree(tree)(List.empty[A])((r,_,l) => List())
+        Utils2.foldTree(tree)(List.empty[A]){
+            case (List(), a, List()) => List(a)
+            case (l,_,r) => l ++ r
+        }
 
     println(
         leaves(void) + "\n" +
@@ -329,7 +341,7 @@ object Problem2_16 extends App{
 
 object Problem2_17 extends App{
     def preorder[A](tree: Tree[A]): List[A] =
-        ???
+        Utils2.foldTree(tree)(List.empty[A]) ((l,a,r) => List(a) ++ l ++ r)
 
     println("Part a) Write a function that creates the pre-order of a binary tree.")
     println(
@@ -345,7 +357,7 @@ object Problem2_17 extends App{
     )
 
     def inorder[A](tree: Tree[A]): List[A] =
-        ???
+        Utils2.foldTree(tree)(List.empty[A]) ((l,a,r) => l ++ List(a) ++  r)
 
     println("Part b) Write a function that returns the in-order of a binary tree.")
     println(
@@ -361,7 +373,7 @@ object Problem2_17 extends App{
     )
 
     def postorder[A](tree: Tree[A]): List[A] =
-        ???
+        Utils2.foldTree(tree)(List.empty[A]) ((l,a,r) => l ++ r ++ List(a))
 
     println("Part c) Write a function that returns post-order of a binary tree")
     println(
@@ -378,7 +390,12 @@ object Problem2_17 extends App{
 }
 
 object Problem2_18 extends App{
-
+    def foldLeft[A, B](tree: Tree[A])(initial: B)(updt: (B, A) => B): B =
+        tree match {
+            case Empty() => initial
+            case Node(left, a, right) =>
+                foldLeft(right)(updt(foldLeft(left)(initial)(updt), a))(updt)
+        }
 }
 
 object Problem2_19 extends App{

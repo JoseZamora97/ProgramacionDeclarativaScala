@@ -107,7 +107,6 @@ object BasicQueries{
 }
 
 import BasicQueries._
-import Ejercicios.Problem3_4.favourites
 
 object Problem3_1 extends App {
     /* Implementation of BasicQueries */
@@ -129,8 +128,9 @@ object Problem3_2 extends App {
     )
 
     def averageRating(film: Film.Id)(mdb: MovieDatabase): Double = {
-        average(filmRatings(film)(mdb).foldRight(List.empty[Int])((r: Rating, list:List[Int]) =>
-            list.appended(r.score)))
+//        average(filmRatings(film)(mdb).foldRight(List.empty[Int])((r: Rating, list:List[Int]) =>
+//            list.appended(r.score)))
+        average(filmRatings(film)(mdb).map(rating => rating.score))
     }
 
     println(
@@ -152,7 +152,9 @@ object Problem3_2 extends App {
 object Problem3_3 extends App {
 
     def mostRated(mdb: MovieDatabase): List[(String, Int)] =
-        ???
+        films(mdb)
+            .map(f => (f.title, filmRatings(f.id)(mdb).size))
+            .sortWith((r1, r2) => r1._2 > r2._2)
 
     println(
         "Print A) Obtain a ranking of films, sorted by their number of ratings " +
@@ -174,7 +176,7 @@ object Problem3_3 extends App {
 
     def topRated(mdb: MovieDatabase): List[(String, Double)] =
         ???
-
+    
     println(
         "Part B) Obtain a ranking of films, sorted by their average score in ascending order.\n" +
         topRated(Data.moviedb).map{

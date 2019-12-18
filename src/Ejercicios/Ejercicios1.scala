@@ -79,23 +79,28 @@ object Utils {
 
 object Problem2 extends App {
     def take[A](list: List[A], n: Int): List[A] = {
-        @scala.annotation.tailrec
-        def takeAux(_list: List[A], aux: Int, acc: List[A]) : List[A] =
-            aux match {
-                case 0 => acc
-                case _ => _list match {
-                    case Nil => Nil
-                    case head::tail => takeAux(tail, aux-1, head::acc)
-                }
-            }
-
-        /* Solution */
-        n match {
-            case 0 => List()
-            case _ if n > list.length => List()
-            case _ if n == list.length => list
-            case _ if n < list.length => Utils.reverse(takeAux(list, n, List()))
+//        @scala.annotation.tailrec
+//        def takeAux(_list: List[A], aux: Int, acc: List[A]) : List[A] =
+//            aux match {
+//                case 0 => acc
+//                case _ => _list match {
+//                    case Nil => Nil
+//                    case head::tail => takeAux(tail, aux-1, head::acc)
+//                }
+//            }
+//
+//        /* Solution */
+//        n match {
+//            case 0 => List()
+//            case _ if n > list.length => List()
+//            case _ if n == list.length => list
+//            case _ if n < list.length => Utils.reverse(takeAux(list, n, List()))
+//        }
+        list match {
+            case head::tail if n > 0 => head::take(tail, n-1)
+            case _ => List()
         }
+
     }
 
     println(take(List(), 0))
